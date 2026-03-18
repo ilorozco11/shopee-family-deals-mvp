@@ -46,6 +46,42 @@ function inferEssential(category) {
   return ['Giấy & vệ sinh', 'Giặt giũ', 'Vệ sinh nhà cửa', 'Chăm sóc cá nhân'].includes(category);
 }
 
+function categoryEmoji(category) {
+  return {
+    'Giấy & vệ sinh': '🧻',
+    'Giặt giũ': '🧺',
+    'Vệ sinh nhà cửa': '🧼',
+    'Chăm sóc cá nhân': '🪥',
+    'Nhà bếp': '🍽️',
+    'Gia dụng': '🏠',
+  }[category] || '🛒';
+}
+
+function makeSvgThumb(title, category) {
+  const emoji = categoryEmoji(category);
+  const safeTitle = String(title).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const safeCategory = String(category).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fff1ec"/>
+        <stop offset="100%" stop-color="#ffd8cc"/>
+      </linearGradient>
+    </defs>
+    <rect width="320" height="320" rx="28" fill="url(#g)"/>
+    <rect x="18" y="18" width="284" height="284" rx="22" fill="#ffffff" opacity="0.8"/>
+    <text x="32" y="68" font-size="42">${emoji}</text>
+    <text x="32" y="112" font-size="20" font-family="Arial, sans-serif" fill="#7d3b2e">${safeCategory}</text>
+    <foreignObject x="28" y="130" width="264" height="150">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Arial,sans-serif;font-size:24px;line-height:1.25;color:#241915;font-weight:700;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;">
+        ${safeTitle}
+      </div>
+    </foreignObject>
+  </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 function computeDealScore({ rating = 0, sold = 0, essential = false, price = 0 }) {
   let score = rating * 12 + Math.min(sold, 100000) / 3000 + (essential ? 16 : 4);
   if (price && price < 150000) score += 8;
@@ -78,9 +114,9 @@ function normalizeProducts(payload) {
       voucher: 'Feed gia đình',
       dealScore: score,
       status: score >= 80 ? 'buy' : 'wait',
-      emoji: essential ? '🏠' : '🛒',
-      note: 'Feed household đã lọc theo nhu cầu gia đình, giảm mạnh nhóm mỹ phẩm/skincare.',
-      image: item.image,
+      emoji: categoryEmoji(category),
+      note: 'Thumbnail đang render đúng theo tên sản phẩm và danh mục để tránh ảnh sai món.',
+      image: item.image || makeSvgThumb(item.title, category),
       link: item.link,
     };
   });
