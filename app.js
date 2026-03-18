@@ -59,27 +59,25 @@ function categoryEmoji(category) {
 
 function makeSvgThumb(title, category) {
   const emoji = categoryEmoji(category);
-  const safeTitle = String(title).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const safeCategory = String(category).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const svg = `
   <svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
-    <defs>
-      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#fff1ec"/>
-        <stop offset="100%" stop-color="#ffd8cc"/>
-      </linearGradient>
-    </defs>
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff1ec"/><stop offset="100%" stop-color="#ffd8cc"/></linearGradient></defs>
     <rect width="320" height="320" rx="28" fill="url(#g)"/>
-    <rect x="18" y="18" width="284" height="284" rx="22" fill="#ffffff" opacity="0.8"/>
+    <rect x="18" y="18" width="284" height="284" rx="22" fill="#ffffff" opacity="0.85"/>
     <text x="32" y="68" font-size="42">${emoji}</text>
-    <text x="32" y="112" font-size="20" font-family="Arial, sans-serif" fill="#7d3b2e">${safeCategory}</text>
+    <text x="32" y="112" font-size="20" font-family="Arial, sans-serif" fill="#7d3b2e">${esc(category)}</text>
     <foreignObject x="28" y="130" width="264" height="150">
       <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Arial,sans-serif;font-size:24px;line-height:1.25;color:#241915;font-weight:700;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;">
-        ${safeTitle}
+        ${esc(title)}
       </div>
     </foreignObject>
   </svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function isDirectListing(link = '') {
+  return /^https:\/\/shopee\.vn\/.+-i\.\d+\.\d+/i.test(link);
 }
 
 function computeDealScore({ rating = 0, sold = 0, essential = false, price = 0 }) {
@@ -97,6 +95,7 @@ function normalizeProducts(payload) {
     const sold = parseSold(item.sold);
     const essential = inferEssential(category);
     const score = computeDealScore({ rating: item.rating, sold, essential, price });
+    const direct = isDirectListing(item.link);
     return {
       id: `feed-${item.id || index}`,
       name: item.title,
@@ -104,18 +103,18 @@ function normalizeProducts(payload) {
       essential,
       price,
       oldPrice: Math.round(price * 1.18),
-      unit: 'Feed household',
+      unit: direct ? 'Listing thật' : 'Search link sát món',
       discountPercent: 15,
       rating: Number(item.rating || 0),
       sold,
       shop: payload?.store?.name || 'Household feed',
-      shopType: 'Curated',
+      shopType: direct ? 'Direct listing' : 'Search',
       freeShip: false,
-      voucher: 'Feed gia đình',
+      voucher: direct ? 'Link trực tiếp' : 'Link tìm kiếm sát nhất',
       dealScore: score,
       status: score >= 80 ? 'buy' : 'wait',
       emoji: categoryEmoji(category),
-      note: 'Thumbnail đang render đúng theo tên sản phẩm và danh mục để tránh ảnh sai món.',
+      note: direct ? 'Đã gắn listing Shopee trực tiếp cho món này.' : 'Món này hiện đang dùng search link rất sát; em sẽ tiếp tục thay bằng listing trực tiếp sau.',
       image: item.image || makeSvgThumb(item.title, category),
       link: item.link,
     };
@@ -135,11 +134,12 @@ function resetCategoryOptions() {
 
 function renderSummary(list) {
   const buyNow = list.filter((item) => item.status === 'buy').length;
+  const directCount = list.filter((item) => item.shopType === 'Direct listing').length;
   const avgDiscount = list.length ? Math.round(list.reduce((sum, item) => sum + item.discountPercent, 0) / list.length) : 0;
   const summary = [
     { label: 'Tổng deal đang theo dõi', value: list.length },
     { label: 'Nên mua ngay', value: buyNow },
-    { label: 'Nguồn dữ liệu', value: 'Household feed' },
+    { label: 'Listing trực tiếp', value: directCount },
     { label: 'Giảm giá quy đổi', value: `${avgDiscount}%` },
   ];
   elements.summaryGrid.innerHTML = summary.map((item) => `
@@ -187,7 +187,7 @@ function renderDeals() {
   elements.productGrid.innerHTML = list.map((item) => {
     const bg = item.image ? `style="background-image:url('${item.image}')"` : '';
     const imageClass = item.image ? 'product-image has-photo' : 'product-image';
-    const action = item.link ? `<a class="metric-chip" href="${item.link}" target="_blank" rel="noopener noreferrer">Mở Shopee</a>` : '';
+    const action = item.link ? `<a class="metric-chip" href="${item.link}" target="_blank" rel="noopener noreferrer">${item.shopType === 'Direct listing' ? 'Mở listing thật' : 'Mở search sát nhất'}</a>` : '';
     return `
       <article class="product-card">
         <div class="${imageClass}" ${bg}>${item.emoji || '🛒'}</div>
