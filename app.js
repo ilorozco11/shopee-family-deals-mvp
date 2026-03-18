@@ -34,15 +34,24 @@ function priceFromText(text = '') {
 
 function inferCategory(title = '') {
   const t = title.toLowerCase();
-  if (/(giấy|khăn giấy|pulppy)/.test(t)) return 'Giấy & vệ sinh';
-  if (/(nước giặt|xả|comfort|omo|dove|sunsilk|clear|tresemmé|tresemme|dầu gội|dầu xả|kem ủ)/.test(t)) return 'Giặt giũ';
-  if (/(rửa chén|lau sàn|tẩy|lau bếp|nhà bếp)/.test(t)) return 'Nhà bếp';
-  if (/(sữa rửa mặt|nước tẩy trang|serum|kem dưỡng|vaseline|simple|ponds|hazeline)/.test(t)) return 'Chăm sóc cá nhân';
+
+  if (/(giấy|khăn giấy|pulppy|posy|toilet paper|khăn ăn|khăn mặt giấy)/.test(t)) return 'Giấy & vệ sinh';
+
+  if (/(nước giặt|omo|tide|ariel|comfort|downy|nước xả|xả vải|giặt xả)/.test(t)) return 'Giặt giũ';
+
+  if (/(nước rửa chén|sunlight|lau sàn|tẩy bếp|tẩy rửa|khử mùi|túi rác|vệ sinh|lau đa năng|nhà cửa)/.test(t)) return 'Vệ sinh nhà cửa';
+
+  if (/(dầu gội|dầu xả|kem ủ|serum tóc|tresemm|tresemmé|clear|sunsilk|dove ceramide|lifebuoy.*tóc)/.test(t)) return 'Chăm sóc tóc';
+
+  if (/(sữa rửa mặt|nước tẩy trang|serum|kem dưỡng|chống nắng|vaseline|simple|ponds|hazeline|dưỡng thể|body tone|gluta|micellar|niacinamide|retinol|repair\+|hydrate\+|purify\+)/.test(t)) return 'Chăm sóc cá nhân';
+
+  if (/(rửa chén|bếp|hộp đựng|dao|chảo|nồi|nhà bếp)/.test(t)) return 'Nhà bếp';
+
   return 'Gia dụng';
 }
 
 function inferEssential(category) {
-  return ['Giấy & vệ sinh', 'Giặt giũ', 'Nhà bếp', 'Chăm sóc cá nhân'].includes(category);
+  return ['Giấy & vệ sinh', 'Giặt giũ', 'Vệ sinh nhà cửa', 'Chăm sóc tóc', 'Chăm sóc cá nhân'].includes(category);
 }
 
 function computeDealScore({ rating = 0, sold = 0, essential = false, price = 0 }) {
