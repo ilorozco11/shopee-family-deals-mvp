@@ -1,4 +1,5 @@
 const formatter = new Intl.NumberFormat('vi-VN');
+const REMOTE_UNILEVER_FEED = 'https://raw.githubusercontent.com/PhanTheMinhChau/shopeelivecoin/main/ads/data/unilever.json';
 
 function formatPrice(value) {
   return `${formatter.format(value)}đ`;
@@ -9,11 +10,13 @@ function cloneDeals() {
 }
 
 let deals = cloneDeals();
+let currentSource = 'mock';
 
 const elements = {
   summaryGrid: document.getElementById('summaryGrid'),
   categoryFilter: document.getElementById('categoryFilter'),
   sortBy: document.getElementById('sortBy'),
+  dataSource: document.getElementById('dataSource'),
   searchInput: document.getElementById('searchInput'),
   onlyBuyNow: document.getElementById('onlyBuyNow'),
   onlyEssential: document.getElementById('onlyEssential'),
@@ -22,7 +25,74 @@ const elements = {
   refreshBtn: document.getElementById('refreshBtn'),
 };
 
-function initCategories() {
+function parseSold(text = '') {
+  const lower = String(text).toLowerCase();
+  const num = parseFloat((lower.match(/[\d.]+/) || [0])[0]);
+  if (lower.includes('k')) return Math.round(num * 1000);
+  if (lower.includes('tr')) return Math.round(num * 1000000);
+  return Math.round(num || 0);
+}
+
+function priceFromText(text = '') {
+  const digits = String(text).replace(/[^\d]/g, '');
+  return Number(digits || 0);
+}
+
+function inferCategory(title = '') {
+  const t = title.toLowerCase();
+  if (/(giấy|khăn giấy|pulppy)/.test(t)) return 'Giấy & vệ sinh';
+  if (/(nước giặt|xả|comfort|omo|dove|sunsilk|clear|tresemmé|tresemme|dầu gội|dầu xả|kem ủ)/.test(t)) return 'Giặt giũ';
+  if (/(rửa chén|lau sàn|tẩy|lau bếp|nhà bếp)/.test(t)) return 'Nhà bếp';
+  if (/(sữa rửa mặt|nước tẩy trang|serum|kem dưỡng|vaseline|simple|ponds|hazeline)/.test(t)) return 'Chăm sóc cá nhân';
+  return 'Gia dụng';
+}
+
+function inferEssential(category) {
+  return ['Giấy & vệ sinh', 'Giặt giũ', 'Nhà bếp', 'Chăm sóc cá nhân'].includes(category);
+}
+
+function computeDealScore({ rating = 0, sold = 0, essential = false, price = 0 }) {
+  let score = rating * 12 + Math.min(sold, 100000) / 3000 + (essential ? 16 : 4);
+  if (price && price < 150000) score += 8;
+  if (price && price < 80000) score += 5;
+  return Math.max(55, Math.min(96, Math.round(score)));
+}
+
+function normalizeRemoteProducts(payload) {
+  const products = Array.isArray(payload?.products) ? payload.products : [];
+  return products.map((item, index) => {
+    const category = inferCategory(item.title);
+    const price = priceFromText(item.price);
+    const sold = parseSold(item.sold);
+    const essential = inferEssential(category);
+    const score = computeDealScore({ rating: item.rating, sold, essential, price });
+    return {
+      id: `remote-${item.id || index}`,
+      name: item.title,
+      category,
+      essential,
+      price,
+      oldPrice: Math.round(price * 1.18),
+      unit: 'Feed tham khảo',
+      discountPercent: 15,
+      rating: Number(item.rating || 0),
+      sold,
+      shop: payload?.store?.name || 'Nguồn tham khảo',
+      shopType: 'Feed',
+      freeShip: false,
+      voucher: 'Nguồn repo tham khảo',
+      dealScore: score,
+      status: score >= 80 ? 'buy' : 'wait',
+      emoji: essential ? '🛍️' : '✨',
+      note: 'Lấy từ feed công khai trong repo tham khảo, chưa phải scrape live trực tiếp.',
+      image: item.image,
+      link: item.link,
+    };
+  });
+}
+
+function resetCategoryOptions() {
+  elements.categoryFilter.innerHTML = '<option value="all">Tất cả</option>';
   const categories = [...new Set(deals.map((item) => item.category))].sort();
   categories.forEach((category) => {
     const option = document.createElement('option');
@@ -34,7 +104,6 @@ function initCategories() {
 
 function renderSummary(list) {
   const buyNow = list.filter((item) => item.status === 'buy').length;
-  const essential = list.filter((item) => item.essential).length;
   const avgDiscount = list.length ? Math.round(list.reduce((sum, item) => sum + item.discountPercent, 0) / list.length) : 0;
   const freeShip = list.filter((item) => item.freeShip).length;
 
@@ -45,14 +114,12 @@ function renderSummary(list) {
     { label: 'Giảm giá TB', value: `${avgDiscount}%` },
   ];
 
-  elements.summaryGrid.innerHTML = summary
-    .map((item) => `
-      <div class="summary-item">
-        <div class="label">${item.label}</div>
-        <div class="value">${item.value}</div>
-      </div>
-    `)
-    .join('');
+  elements.summaryGrid.innerHTML = summary.map((item) => `
+    <div class="summary-item">
+      <div class="label">${item.label}</div>
+      <div class="value">${item.value}</div>
+    </div>
+  `).join('');
 }
 
 function getFilteredDeals() {
@@ -67,18 +134,9 @@ function getFilteredDeals() {
   if (keyword) {
     list = list.filter((item) => [item.name, item.shop, item.category, item.note].join(' ').toLowerCase().includes(keyword));
   }
-
-  if (category !== 'all') {
-    list = list.filter((item) => item.category === category);
-  }
-
-  if (onlyBuyNow) {
-    list = list.filter((item) => item.status === 'buy');
-  }
-
-  if (onlyEssential) {
-    list = list.filter((item) => item.essential);
-  }
+  if (category !== 'all') list = list.filter((item) => item.category === category);
+  if (onlyBuyNow) list = list.filter((item) => item.status === 'buy');
+  if (onlyEssential) list = list.filter((item) => item.essential);
 
   const sorters = {
     dealScore: (a, b) => b.dealScore - a.dealScore,
@@ -87,13 +145,12 @@ function getFilteredDeals() {
     unitPriceAsc: (a, b) => parseUnit(a.unit) - parseUnit(b.unit),
     ratingDesc: (a, b) => b.rating - a.rating || b.sold - a.sold,
   };
-
   list.sort(sorters[sortBy]);
   return list;
 }
 
 function parseUnit(unitText) {
-  const match = unitText.match(/([\d.]+)/);
+  const match = String(unitText).match(/([\d.]+)/);
   if (!match) return Number.MAX_SAFE_INTEGER;
   return Number(match[1].replace(/\./g, ''));
 }
@@ -101,17 +158,20 @@ function parseUnit(unitText) {
 function renderDeals() {
   const list = getFilteredDeals();
   renderSummary(list);
-  elements.resultCount.textContent = `${list.length} deal`;
+  elements.resultCount.textContent = `${list.length} deal • nguồn ${currentSource === 'mock' ? 'mock' : 'repo tham khảo'}`;
 
   if (!list.length) {
     elements.productGrid.innerHTML = '<div class="empty">Không có deal nào khớp bộ lọc hiện tại cả anh Roy ơi.</div>';
     return;
   }
 
-  elements.productGrid.innerHTML = list
-    .map((item) => `
+  elements.productGrid.innerHTML = list.map((item) => {
+    const bg = item.image ? `style="background-image:url('${item.image}')"` : '';
+    const imageClass = item.image ? 'product-image has-photo' : 'product-image';
+    const action = item.link ? `<a class="metric-chip" href="${item.link}" target="_blank" rel="noopener noreferrer">Mở Shopee</a>` : '';
+    return `
       <article class="product-card">
-        <div class="product-image">${item.emoji}</div>
+        <div class="${imageClass}" ${bg}>${item.emoji || '🛒'}</div>
         <div>
           <div class="product-top">
             <div>
@@ -133,11 +193,12 @@ function renderDeals() {
             <span class="metric-chip">Deal score ${item.dealScore}</span>
             ${item.freeShip ? '<span class="metric-chip">Freeship</span>' : ''}
             <span class="metric-chip">${item.voucher}</span>
+            ${action}
           </div>
         </div>
       </article>
-    `)
-    .join('');
+    `;
+  }).join('');
 }
 
 function refreshMockData() {
@@ -146,15 +207,36 @@ function refreshMockData() {
     const newDiscount = Math.max(10, item.discountPercent + variance);
     const newPrice = Math.round(item.oldPrice * (100 - newDiscount) / 100 / 1000) * 1000;
     const newScore = Math.max(55, Math.min(97, item.dealScore + variance * 1.7 + (item.freeShip ? 1.5 : 0)));
-    return {
-      ...item,
-      discountPercent: newDiscount,
-      price: newPrice,
-      dealScore: Math.round(newScore),
-      status: newScore >= 82 ? 'buy' : 'wait',
-    };
+    return { ...item, discountPercent: newDiscount, price: newPrice, dealScore: Math.round(newScore), status: newScore >= 82 ? 'buy' : 'wait' };
   });
-  renderDeals();
+}
+
+async function loadSource(source) {
+  currentSource = source;
+  if (source === 'mock') {
+    refreshMockData();
+    resetCategoryOptions();
+    renderDeals();
+    return;
+  }
+
+  elements.productGrid.innerHTML = '<div class="empty">Đang tải feed tham khảo từ repo GitHub...</div>';
+  try {
+    const res = await fetch(REMOTE_UNILEVER_FEED);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const payload = await res.json();
+    deals = normalizeRemoteProducts(payload);
+    resetCategoryOptions();
+    renderDeals();
+  } catch (error) {
+    console.error(error);
+    deals = cloneDeals();
+    currentSource = 'mock';
+    elements.dataSource.value = 'mock';
+    resetCategoryOptions();
+    renderDeals();
+    alert('Không tải được feed repo tham khảo, em trả về mock data trước nhé anh Roy.');
+  }
 }
 
 ['input', 'change'].forEach((eventName) => {
@@ -165,7 +247,8 @@ function refreshMockData() {
   elements.onlyEssential.addEventListener(eventName, renderDeals);
 });
 
-elements.refreshBtn.addEventListener('click', refreshMockData);
+elements.dataSource.addEventListener('change', (e) => loadSource(e.target.value));
+elements.refreshBtn.addEventListener('click', () => loadSource(elements.dataSource.value));
 
-initCategories();
+resetCategoryOptions();
 renderDeals();

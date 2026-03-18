@@ -74,7 +74,7 @@ button {
 .summary-item .value { font-size: 28px; font-weight: 800; margin-top: 6px; }
 .controls {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.4fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1.4fr;
   gap: 16px;
   margin-bottom: 18px;
 }
@@ -127,6 +127,12 @@ input, select {
   align-items: center;
   justify-content: center;
   font-size: 36px;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+.product-image.has-photo {
+  color: transparent;
 }
 .product-top {
   display: flex;
