@@ -1,0 +1,103 @@
+{
+  "source": "household-curated-feed",
+  "updated_at": "2026-03-18T05:00:00Z",
+  "store": {
+    "name": "Household Feed Cho Anh Roy",
+    "rating": 4.8,
+    "followers": "curated",
+    "description": "Feed ưu tiên đồ thiết yếu gia đình: giấy, giặt giũ, vệ sinh nhà cửa, nhà bếp, chăm sóc cá nhân cơ bản.",
+    "link": "https://shopee.vn/"
+  },
+  "products": [
+    {
+      "id": 1,
+      "title": "Nước giặt OMO Matic túi 3.6kg",
+      "price": "đ189.000",
+      "rating": 4.9,
+      "sold": "Đã bán 12k+",
+      "image": "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=400&q=80",
+      "link": "https://shopee.vn/search?keyword=n%C6%B0%E1%BB%9Bc%20gi%E1%BA%B7t%20omo%20matic"
+    },
+    {
+      "id": 2,
+      "title": "Giấy vệ sinh Pulppy 24 cuộn 4 lớp",
+      "price": "đ119.000",
+      "rating": 4.8,
+      "sold": "Đã bán 9k+",
+      "image": "https://images.unsplash.com/photo-1583947582886-f40ec95dd752?auto=format&fit=crop&w=400&q=80",
+      "link": "https://shopee.vn/search?keyword=gi%E1%BA%A5y%20v%E1%BB%87%20sinh%20pulppy%2024%20cu%E1%BB%99n"
+    },
+    {
+      "id": 3,
+      "title": "Nước rửa chén Sunlight túi 3.6kg",
+      "price": "đ98.000",
+      "rating": 4.8,
+      "sold": "Đã bán 7k+",
+      "image": "https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=400&q=80",
+      "link": "https://shopee.vn/search?keyword=n%C6%B0%E1%BB%9Bc%20r%E1%BB%ADa%20ch%C3%A9n%20sunlight%203.6kg"
+    },
+    {
+      "id": 4,
+      "title": "Nước lau sàn Gift hương chanh 3.8L",
+      "price": "đ79.000",
+      "rating": 4.7,
+      "sold": "Đã bán 4k+",
+      "image": "https://images.unsplash.com/photo-1563453392212-326f5e854473?auto=format&fit=crop&w=400&q=80",
+      "link": "https://shopee.vn/search?keyword=n%C6%B0%E1%BB%9Bc%20lau%20s%C3%A0n%20gift%203.8l"
+    },
+    {
+      "id": 5,
+      "title": "Khăn giấy Bless You 10 gói",
+      "price": "đ45.000",
+      "rating": 4.8,
+      "sold": "Đã bán 6k+",
+      "image": "https://images.unsplash.com/photo-1616627981459-bf0f7b9f9b74?auto=format&fit=crop&w=400&q=80",
+      "link": "https://shopee.vn/search?keyword=kh%C4%83n%20gi%E1%BA%A5y%20bless%20you%2010%20g%C3%B3i"
+    },
+    {
+      "id": 6,
+      "title": "Nước xả Comfort đậm đặc 3.2L",
+      "price": "đ154.000",
+      "rating": 4.9,
+      "sold": "Đã bán 5k+",
+      "image": "https://images.unsplash.com/photo-1610552050890-fe99536c2614?auto=format&fit=crop&w=400&q=80",
+      "link": "https://shopee.vn/search?keyword=n%C6%B0%E1%BB%9Bc%20x%E1%BA%A3%20comfort%203.2l"
+    },
+    {
+      "id": 7,
+      "title": "Túi rác gia đình tự huỷ 3 cuộn",
+      "price": "đ39.000",
+      "rating": 4.7,
+      "sold": "Đã bán 2k+",
+      "image": "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=400&q=80",
+      "link": "https://shopee.vn/search?keyword=t%C3%BAi%20r%C3%A1c%20gia%20%C4%91%C3%ACnh%20t%E1%BB%B1%20hu%E1%BB%B7"
+    },
+    {
+      "id": 8,
+      "title": "Bình xịt lau bếp đa năng 500ml",
+      "price": "đ59.000",
+      "rating": 4.6,
+      "sold": "Đã bán 1k+",
+      "image": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80",
+      "link": "https://shopee.vn/search?keyword=b%C3%ACnh%20x%E1%BB%8Bt%20lau%20b%E1%BA%BFp%20%C4%91a%20n%C4%83ng"
+    },
+    {
+      "id": 9,
+      "title": "Combo bàn chải + kem đánh răng gia đình",
+      "price": "đ99.000",
+      "rating": 4.8,
+      "sold": "Đã bán 5k+",
+      "image": "https://images.unsplash.com/photo-1559591937-abc4b092559d?auto=format&fit=crop&w=400&q=80",
+      "link": "https://shopee.vn/search?keyword=combo%20b%C3%A0n%20ch%E1%BA%A3i%20kem%20%C4%91%C3%A1nh%20r%C4%83ng%20gia%20%C4%91%C3%ACnh"
+    },
+    {
+      "id": 10,
+      "title": "Hộp đựng thực phẩm 10 món",
+      "price": "đ129.000",
+      "rating": 4.7,
+      "sold": "Đã bán 3k+",
+      "image": "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&w=400&q=80",
+      "link": "https://shopee.vn/search?keyword=h%E1%BB%99p%20%C4%91%E1%BB%B1ng%20th%E1%BB%B1c%20ph%E1%BA%A9m%2010%20m%C3%B3n"
+    }
+  ]
+}
