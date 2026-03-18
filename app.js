@@ -5,18 +5,12 @@ function formatPrice(value) {
   return `${formatter.format(value)}đ`;
 }
 
-function cloneDeals() {
-  return (window.MOCK_DEALS || []).map((item) => ({ ...item }));
-}
-
-let deals = cloneDeals();
-let currentSource = 'mock';
+let deals = [];
 
 const elements = {
   summaryGrid: document.getElementById('summaryGrid'),
   categoryFilter: document.getElementById('categoryFilter'),
   sortBy: document.getElementById('sortBy'),
-  dataSource: document.getElementById('dataSource'),
   searchInput: document.getElementById('searchInput'),
   onlyBuyNow: document.getElementById('onlyBuyNow'),
   onlyEssential: document.getElementById('onlyEssential'),
@@ -80,11 +74,11 @@ function normalizeRemoteProducts(payload) {
       shop: payload?.store?.name || 'Nguồn tham khảo',
       shopType: 'Feed',
       freeShip: false,
-      voucher: 'Nguồn repo tham khảo',
+      voucher: 'Feed công khai',
       dealScore: score,
       status: score >= 80 ? 'buy' : 'wait',
       emoji: essential ? '🛍️' : '✨',
-      note: 'Lấy từ feed công khai trong repo tham khảo, chưa phải scrape live trực tiếp.',
+      note: 'Nguồn dữ liệu công khai từ repo tham khảo. Chưa phải crawler live trực tiếp.',
       image: item.image,
       link: item.link,
     };
@@ -105,13 +99,11 @@ function resetCategoryOptions() {
 function renderSummary(list) {
   const buyNow = list.filter((item) => item.status === 'buy').length;
   const avgDiscount = list.length ? Math.round(list.reduce((sum, item) => sum + item.discountPercent, 0) / list.length) : 0;
-  const freeShip = list.filter((item) => item.freeShip).length;
-
   const summary = [
     { label: 'Tổng deal đang theo dõi', value: list.length },
     { label: 'Nên mua ngay', value: buyNow },
-    { label: 'Deal freeship', value: freeShip },
-    { label: 'Giảm giá TB', value: `${avgDiscount}%` },
+    { label: 'Nguồn dữ liệu', value: 'Feed thật' },
+    { label: 'Giảm giá quy đổi', value: `${avgDiscount}%` },
   ];
 
   elements.summaryGrid.innerHTML = summary.map((item) => `
@@ -130,10 +122,7 @@ function getFilteredDeals() {
   const onlyEssential = elements.onlyEssential.checked;
 
   let list = [...deals];
-
-  if (keyword) {
-    list = list.filter((item) => [item.name, item.shop, item.category, item.note].join(' ').toLowerCase().includes(keyword));
-  }
+  if (keyword) list = list.filter((item) => [item.name, item.shop, item.category, item.note].join(' ').toLowerCase().includes(keyword));
   if (category !== 'all') list = list.filter((item) => item.category === category);
   if (onlyBuyNow) list = list.filter((item) => item.status === 'buy');
   if (onlyEssential) list = list.filter((item) => item.essential);
@@ -150,18 +139,18 @@ function getFilteredDeals() {
 }
 
 function parseUnit(unitText) {
-  const match = String(unitText).match(/([\d.]+)/);
+  const match = String(unitText).match(/[\d.]+/);
   if (!match) return Number.MAX_SAFE_INTEGER;
-  return Number(match[1].replace(/\./g, ''));
+  return Number(match[0].replace(/\./g, ''));
 }
 
 function renderDeals() {
   const list = getFilteredDeals();
   renderSummary(list);
-  elements.resultCount.textContent = `${list.length} deal • nguồn ${currentSource === 'mock' ? 'mock' : 'repo tham khảo'}`;
+  elements.resultCount.textContent = `${list.length} deal • feed thật`;
 
   if (!list.length) {
-    elements.productGrid.innerHTML = '<div class="empty">Không có deal nào khớp bộ lọc hiện tại cả anh Roy ơi.</div>';
+    elements.productGrid.innerHTML = '<div class="empty">Chưa có deal nào khớp bộ lọc hiện tại cả anh Roy ơi.</div>';
     return;
   }
 
@@ -191,7 +180,6 @@ function renderDeals() {
             <span class="metric-chip">⭐ ${item.rating}</span>
             <span class="metric-chip">Đã bán ${formatter.format(item.sold)}</span>
             <span class="metric-chip">Deal score ${item.dealScore}</span>
-            ${item.freeShip ? '<span class="metric-chip">Freeship</span>' : ''}
             <span class="metric-chip">${item.voucher}</span>
             ${action}
           </div>
@@ -201,26 +189,8 @@ function renderDeals() {
   }).join('');
 }
 
-function refreshMockData() {
-  deals = cloneDeals().map((item) => {
-    const variance = Math.floor(Math.random() * 8) - 3;
-    const newDiscount = Math.max(10, item.discountPercent + variance);
-    const newPrice = Math.round(item.oldPrice * (100 - newDiscount) / 100 / 1000) * 1000;
-    const newScore = Math.max(55, Math.min(97, item.dealScore + variance * 1.7 + (item.freeShip ? 1.5 : 0)));
-    return { ...item, discountPercent: newDiscount, price: newPrice, dealScore: Math.round(newScore), status: newScore >= 82 ? 'buy' : 'wait' };
-  });
-}
-
-async function loadSource(source) {
-  currentSource = source;
-  if (source === 'mock') {
-    refreshMockData();
-    resetCategoryOptions();
-    renderDeals();
-    return;
-  }
-
-  elements.productGrid.innerHTML = '<div class="empty">Đang tải feed tham khảo từ repo GitHub...</div>';
+async function loadFeed() {
+  elements.productGrid.innerHTML = '<div class="empty">Đang tải feed thật cho anh Roy...</div>';
   try {
     const res = await fetch(REMOTE_UNILEVER_FEED);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -230,12 +200,9 @@ async function loadSource(source) {
     renderDeals();
   } catch (error) {
     console.error(error);
-    deals = cloneDeals();
-    currentSource = 'mock';
-    elements.dataSource.value = 'mock';
-    resetCategoryOptions();
-    renderDeals();
-    alert('Không tải được feed repo tham khảo, em trả về mock data trước nhé anh Roy.');
+    elements.productGrid.innerHTML = '<div class="empty">Không tải được feed thật lúc này. Em sẽ phải nối sang nguồn khác hoặc làm proxy riêng.</div>';
+    elements.summaryGrid.innerHTML = '';
+    elements.resultCount.textContent = '0 deal';
   }
 }
 
@@ -247,8 +214,5 @@ async function loadSource(source) {
   elements.onlyEssential.addEventListener(eventName, renderDeals);
 });
 
-elements.dataSource.addEventListener('change', (e) => loadSource(e.target.value));
-elements.refreshBtn.addEventListener('click', () => loadSource(elements.dataSource.value));
-
-resetCategoryOptions();
-renderDeals();
+elements.refreshBtn.addEventListener('click', loadFeed);
+loadFeed();
